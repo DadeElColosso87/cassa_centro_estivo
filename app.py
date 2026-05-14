@@ -1,19 +1,11 @@
 import streamlit as st
 import pandas as pd
-import os
 import io
 
 from supabase_client import supabase
 from config import CASSE, TIPI, METODI, CATEGORIE
 
 st.set_page_config(page_title="Cassa Centro Estivo", layout="wide")
-
-# =========================
-# CARTELLA SCONTRINI
-# =========================
-SCONTRINI_DIR = "scontrini"
-if not os.path.exists(SCONTRINI_DIR):
-    os.makedirs(SCONTRINI_DIR)
 
 st.title("💰 Cassa Centro Estivo")
 
@@ -30,17 +22,17 @@ if st.session_state.ruolo is None:
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("👤 Entra come Guest"):
+        if st.button("👤 Guest"):
             st.session_state.ruolo = "guest"
             st.rerun()
 
     with col2:
-        st.subheader("🔐 Amministratore")
+        st.subheader("🔐 Admin")
 
         username = st.text_input("Utente")
         password = st.text_input("Password", type="password")
 
-        if st.button("Login Admin"):
+        if st.button("Login"):
             if username == "admin" and password == "admin2026":
                 st.session_state.ruolo = "admin"
                 st.rerun()
@@ -49,12 +41,9 @@ if st.session_state.ruolo is None:
 
     st.stop()
 
-# =========================
-# RUOLO
-# =========================
 is_admin = st.session_state.ruolo == "admin"
 
-# LOGOUT
+# logout
 if st.button("🚪 Logout"):
     st.session_state.ruolo = None
     st.rerun()
@@ -64,7 +53,7 @@ if st.button("🚪 Logout"):
 # =========================
 st.header("➕ Inserisci Movimento")
 
-with st.form("form_inserimento", clear_on_submit=True):
+with st.form("form", clear_on_submit=True):
 
     col1, col2, col3 = st.columns(3)
 
@@ -101,23 +90,33 @@ with st.form("form_inserimento", clear_on_submit=True):
 
     if submit:
 
-        # controllo campi obbligatori
         if tipo == "" or cassa == "" or metodo == "" or categoria == "":
             st.error("Compila tutti i campi obbligatori")
+
         elif not is_admin and inserito_da.strip() == "":
             st.error("Inserisci nome e cognome")
+
         else:
             try:
-                # salva file
-                nome_file = ""
+                # =========================
+                # UPLOAD SCONTRINO SU SUPABASE
+                # =========================
+                public_url = ""
+
                 if uploaded_file:
                     nome_file = f"{data}_{importo}_{uploaded_file.name}"
-                    path = os.path.join(SCONTRINI_DIR, nome_file)
 
-                    with open(path, "wb") as f:
-                        f.write(uploaded_file.getbuffer())
+                    supabase.storage.from_("scontrini").upload(
+                        nome_file,
+                        uploaded_file.getvalue(),
+                        {"content-type": uploaded_file.type}
+                    )
 
-                # salva DB
+                    public_url = supabase.storage.from_("scontrini").get_public_url(nome_file)
+
+                # =========================
+                # SALVA SU DATABASE
+                # =========================
                 supabase.table("movimenti").insert({
                     "data": str(data),
                     "tipo": tipo,
@@ -129,7 +128,7 @@ with st.form("form_inserimento", clear_on_submit=True):
                     "numero_scontrino": numero_scontrino,
                     "esercente": esercente,
                     "data_scontrino": str(data_scontrino),
-                    "file_scontrino": nome_file,
+                    "file_scontrino": public_url,
                     "inserito_da": inserito_da,
                     "note": note
                 }).execute()
@@ -141,7 +140,7 @@ with st.form("form_inserimento", clear_on_submit=True):
                 st.error(f"Errore inserimento: {e}")
 
 # =========================
-# SOLO ADMIN
+# ADMIN
 # =========================
 if is_admin:
 
@@ -154,11 +153,19 @@ if is_admin:
         if df.empty:
             st.info("Nessun movimento")
         else:
-            # ✅ checkbox eliminazione
+            # ✅ colonna cliccabile scontrino
+            if "file_scontrino" in df.columns:
+                df["Scontrino"] = df["file_scontrino"].apply(
+                    lambda x: f"{x}" if x else ""
+                )
+                df = df.drop(columns=["file_scontrino"])
+
+            # ✅ checkbox selezione
             df.insert(0, "Seleziona", False)
 
             df_edit = st.data_editor(df, use_container_width=True)
 
+            # ✅ elimina
             if st.button("🗑 Elimina selezionati"):
                 for _, row in df_edit.iterrows():
                     if row["Seleziona"]:
@@ -167,8 +174,8 @@ if is_admin:
                 st.success("✅ Eliminazione completata")
                 st.rerun()
 
-            # ✅ EXPORT EXCEL
-            st.header("📥 Esporta dati")
+            # ✅ download Excel
+            st.header("📥 Esporta")
 
             output = io.BytesIO()
             df.to_excel(output, index=False)
@@ -192,10 +199,10 @@ if is_admin:
         df_all = pd.DataFrame(response.data)
 
         for cassa in CASSE:
-            df_c = df_all[df_all["cassa"] == cassa]
+            df_cassa = df_all[df_all["cassa"] == cassa]
 
-            entrate = df_c[df_c["tipo"] == "Entrata"]["importo"].sum()
-            uscite = df_c[df_c["tipo"] == "Uscita"]["importo"].sum()
+            entrate = df_cassa[df_cassa["tipo"] == "Entrata"]["importo"].sum()
+            uscite = df_cassa[df_cassa["tipo"] == "Uscita"]["importo"].sum()
 
             saldo = entrate - uscite
 
@@ -205,4 +212,4 @@ if is_admin:
         st.error(f"Errore saldi: {e}")
 
 else:
-    st.info("👤 Modalità Guest: puoi solo inserire spese")
+    st.info("👤 Modalità Guest: solo inserimento")
