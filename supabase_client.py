@@ -5,6 +5,6 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
 url = "https://jxueaeulfyrtufsfhieu.supabase.co"
-key = "sb_publishable_Mryk_lmsCyf6OZrfxzQ1w_j4tRTgLp"
+key = "sb_publishable__Mryk_lmsCyf6OZrfxzQ1w_j4tRTgLp"
 
 supabase = create_client(url, key)
