@@ -8,75 +8,81 @@ from datetime import date
 from supabase_client import supabase
 from config import CASSE, TIPI, METODI, CATEGORIE
 
-# =========================
-# PAGINA
-# =========================
+# =====================================================
+# CONFIG PAGINA
+# =====================================================
 st.set_page_config(
     page_title="Cassa Centro Estivo",
     layout="wide"
 )
 
-# =========================
+# =====================================================
 # NASCONDI SIDEBAR
-# =========================
+# =====================================================
 st.markdown("""
 <style>
+
 [data-testid="stSidebar"] {
     display: none;
 }
-</style>
-""", unsafe_allow_html=True)
 
-# =========================
-# BOTTONI GRANDI MOBILE
-# =========================
-st.markdown("""
-<style>
 div.stButton > button {
     height: 60px;
     font-size: 20px;
     font-weight: bold;
     border-radius: 12px;
 }
+
+.stDownloadButton > button {
+    height: 55px;
+    font-size: 18px;
+    border-radius: 12px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# =========================
+# =====================================================
 # TITOLO
-# =========================
+# =====================================================
 st.title("💰 Cassa Centro Estivo")
 
-# =========================
-# SESSIONE RUOLO
-# =========================
+# =====================================================
+# SESSIONE
+# =====================================================
 if "ruolo" not in st.session_state:
     st.session_state.ruolo = None
 
-# =========================
+# =====================================================
 # LOGIN
-# =========================
+# =====================================================
 if st.session_state.ruolo is None:
 
     st.header("🔐 Accesso")
 
     col1, col2 = st.columns(2)
 
-    # =========================
+    # =================================================
     # GUEST
-    # =========================
+    # =================================================
     with col1:
 
         st.subheader("👤 Guest")
 
-        st.write("Inserimento spese e scontrini")
+        st.write("""
+        Inserisci:
+        - spese
+        - scontrini
+        - acquisti effettuati
+        """)
 
-        if st.button("Entra come Guest"):
+        if st.button("👤 Entra come Guest"):
             st.session_state.ruolo = "guest"
             st.rerun()
 
-    # =========================
+    # =================================================
     # ADMIN
-    # =========================
+    # =================================================
     with col2:
 
         st.subheader("👩 Segretaria")
@@ -84,41 +90,44 @@ if st.session_state.ruolo is None:
         username = st.text_input("Utente")
         password = st.text_input("Password", type="password")
 
-        if st.button("Login Admin"):
+        if st.button("🔐 Login Admin"):
 
             if username == "admin" and password == "admin2026":
+
                 st.session_state.ruolo = "admin"
                 st.rerun()
 
             else:
+
                 st.error("❌ Credenziali errate")
 
     st.stop()
 
-# =========================
+# =====================================================
 # CONTROLLO RUOLO
-# =========================
+# =====================================================
 is_admin = st.session_state.ruolo == "admin"
 
-# =========================
+# =====================================================
 # LOGOUT
-# =========================
+# =====================================================
 if st.button("🚪 Logout"):
+
     st.session_state.ruolo = None
     st.rerun()
 
-# =========================
-# INSERIMENTO MOVIMENTO
-# =========================
+# =====================================================
+# INSERIMENTO
+# =====================================================
 st.header("➕ Inserisci Spesa")
 
 with st.form("form_movimento", clear_on_submit=True):
 
     col1, col2, col3 = st.columns(3)
 
-    # =========================
+    # =================================================
     # COLONNA 1
-    # =========================
+    # =================================================
     with col1:
 
         data = date.today()
@@ -135,9 +144,9 @@ with st.form("form_movimento", clear_on_submit=True):
             [""] + CASSE
         )
 
-    # =========================
+    # =================================================
     # COLONNA 2
-    # =========================
+    # =================================================
     with col2:
 
         descrizione = st.text_input("Descrizione")
@@ -153,9 +162,9 @@ with st.form("form_movimento", clear_on_submit=True):
             step=0.50
         )
 
-    # =========================
+    # =================================================
     # COLONNA 3
-    # =========================
+    # =================================================
     with col3:
 
         categoria = st.selectbox(
@@ -165,9 +174,9 @@ with st.form("form_movimento", clear_on_submit=True):
 
         note = st.text_input("Note")
 
-    # =========================
+    # =================================================
     # SCONTRINO
-    # =========================
+    # =================================================
     st.subheader("🧾 Scontrino")
 
     numero_scontrino = st.text_input("Numero scontrino")
@@ -176,69 +185,142 @@ with st.form("form_movimento", clear_on_submit=True):
 
     data_scontrino = st.date_input("Data scontrino")
 
-    # CAMERA DIRETTA
-    uploaded_file = st.camera_input("📸 Scatta foto scontrino")
+    # =================================================
+    # METODO CARICAMENTO
+    # =================================================
+    tipo_upload = st.radio(
+        "Metodo caricamento scontrino",
+        [
+            "📸 Fotocamera",
+            "📂 Upload file"
+        ],
+        horizontal=True
+    )
 
-    # =========================
-    # INSERITO DA
-    # =========================
+    uploaded_file = None
+
+    # =================================================
+    # FOTOCAMERA
+    # =================================================
+    if tipo_upload == "📸 Fotocamera":
+
+        uploaded_file = st.camera_input(
+            "📸 Scatta foto scontrino"
+        )
+
+    # =================================================
+    # UPLOAD FILE
+    # =================================================
+    else:
+
+        uploaded_file = st.file_uploader(
+            "📂 Carica scontrino",
+            type=["jpg", "jpeg", "png", "pdf"]
+        )
+
+    # =================================================
+    # ANTEPRIMA
+    # =================================================
+    if uploaded_file:
+
+        st.subheader("👁 Anteprima")
+
+        if uploaded_file.type.startswith("image"):
+
+            st.image(
+                uploaded_file,
+                width=350
+            )
+
+        elif uploaded_file.type == "application/pdf":
+
+            st.info("📄 PDF caricato correttamente")
+
+    # =================================================
+    # CHI INSERISCE
+    # =================================================
     st.subheader("👤 Chi inserisce")
 
     if is_admin:
+
         inserito_da = "Segretaria"
 
     else:
-        inserito_da = st.text_input("Nome e Cognome")
 
-    # =========================
+        inserito_da = st.text_input(
+            "Nome e Cognome"
+        )
+
+    # =================================================
     # SUBMIT
-    # =========================
-    submit = st.form_submit_button("✅ Invia Spesa")
+    # =================================================
+    submit = st.form_submit_button(
+        "✅ Invia Spesa"
+    )
 
-    # =========================
+    # =================================================
     # INVIO
-    # =========================
+    # =================================================
     if submit:
 
-        if tipo == "" or cassa == "" or metodo == "" or categoria == "":
+        # =============================================
+        # CONTROLLI
+        # =============================================
+        if (
+            tipo == ""
+            or cassa == ""
+            or metodo == ""
+            or categoria == ""
+        ):
 
-            st.error("❌ Compila tutti i campi obbligatori")
+            st.error(
+                "❌ Compila tutti i campi obbligatori"
+            )
 
-        elif not is_admin and inserito_da.strip() == "":
+        elif (
+            not is_admin
+            and inserito_da.strip() == ""
+        ):
 
-            st.error("❌ Inserisci nome e cognome")
+            st.error(
+                "❌ Inserisci nome e cognome"
+            )
 
         else:
 
             try:
 
-                # =========================
-                # URL SCONTRINO
-                # =========================
+                # =====================================
+                # URL FILE
+                # =====================================
                 public_url = ""
 
-                # =========================
-                # UPLOAD FOTO
-                # =========================
+                # =====================================
+                # UPLOAD FILE SUPABASE
+                # =====================================
                 if uploaded_file:
 
                     estensione = uploaded_file.name.split(".")[-1]
 
                     nome_file = f"{uuid.uuid4()}.{estensione}"
 
-                    supabase.storage.from_("scontrini").upload(
-                        nome_file,
-                        uploaded_file.getvalue(),
-                        {
-                            "content-type": uploaded_file.type
-                        }
-                    )
+                    supabase.storage \
+                        .from_("scontrini") \
+                        .upload(
+                            nome_file,
+                            uploaded_file.getvalue(),
+                            {
+                                "content-type": uploaded_file.type
+                            }
+                        )
 
-                    public_url = supabase.storage.from_("scontrini").get_public_url(nome_file)
+                    public_url = supabase.storage \
+                        .from_("scontrini") \
+                        .get_public_url(nome_file)
 
-                # =========================
+                # =====================================
                 # SALVATAGGIO DATABASE
-                # =========================
+                # =====================================
                 supabase.table("movimenti").insert({
 
                     "data": str(data),
@@ -260,17 +342,21 @@ with st.form("form_movimento", clear_on_submit=True):
 
                 }).execute()
 
-                st.success("✅ Spesa inviata correttamente alla segreteria")
+                st.success(
+                    "✅ Spesa inviata correttamente alla segreteria"
+                )
 
                 st.rerun()
 
             except Exception as e:
 
-                st.error(f"Errore inserimento: {e}")
+                st.error(
+                    f"Errore inserimento: {e}"
+                )
 
-# =========================
+# =====================================================
 # AREA ADMIN
-# =========================
+# =====================================================
 if is_admin:
 
     st.divider()
@@ -279,30 +365,34 @@ if is_admin:
 
     try:
 
-        response = supabase.table("movimenti").select("*").execute()
+        response = supabase.table(
+            "movimenti"
+        ).select("*").execute()
 
         df = pd.DataFrame(response.data)
 
-        # =========================
+        # =================================================
         # NESSUN DATO
-        # =========================
+        # =================================================
         if df.empty:
 
-            st.info("Nessun movimento registrato")
+            st.info(
+                "Nessun movimento registrato"
+            )
 
         else:
 
-            # =========================
-            # ORDINA ULTIMI PRIMA
-            # =========================
+            # =============================================
+            # ORDINA PER DATA
+            # =============================================
             df = df.sort_values(
                 by="data",
                 ascending=False
             )
 
-            # =========================
+            # =============================================
             # FILTRO CASSA
-            # =========================
+            # =============================================
             filtro_cassa = st.selectbox(
                 "Filtra per cassa",
                 ["Tutte"] + CASSE
@@ -310,51 +400,67 @@ if is_admin:
 
             if filtro_cassa != "Tutte":
 
-                df = df[df["cassa"] == filtro_cassa]
+                df = df[
+                    df["cassa"] == filtro_cassa
+                ]
 
-            # =========================
+            # =============================================
             # LINK SCONTRINO
-            # =========================
+            # =============================================
             if "file_scontrino" in df.columns:
 
-                df["Scontrino"] = df["file_scontrino"]
+                df["Scontrino"] = df[
+                    "file_scontrino"
+                ]
 
-                df = df.drop(columns=["file_scontrino"])
+                df = df.drop(
+                    columns=["file_scontrino"]
+                )
 
-            # =========================
-            # CHECKBOX SELEZIONE
-            # =========================
-            df.insert(0, "Seleziona", False)
+            # =============================================
+            # CHECKBOX
+            # =============================================
+            df.insert(
+                0,
+                "Seleziona",
+                False
+            )
 
-            # =========================
+            # =============================================
             # TABELLA
-            # =========================
+            # =============================================
             df_edit = st.data_editor(
                 df,
                 use_container_width=True
             )
 
-            # =========================
+            # =============================================
             # ELIMINA
-            # =========================
-            if st.button("🗑 Elimina selezionati"):
+            # =============================================
+            if st.button(
+                "🗑 Elimina selezionati"
+            ):
 
                 for _, row in df_edit.iterrows():
 
                     if row["Seleziona"]:
 
-                        supabase.table("movimenti") \
-                            .delete() \
-                            .eq("id", row["id"]) \
-                            .execute()
+                        supabase.table(
+                            "movimenti"
+                        ).delete().eq(
+                            "id",
+                            row["id"]
+                        ).execute()
 
-                st.success("✅ Eliminazione completata")
+                st.success(
+                    "✅ Eliminazione completata"
+                )
 
                 st.rerun()
 
-            # =========================
+            # =============================================
             # EXPORT EXCEL
-            # =========================
+            # =============================================
             st.divider()
 
             st.header("📥 Esporta Excel")
@@ -374,24 +480,30 @@ if is_admin:
 
     except Exception as e:
 
-        st.error(f"Errore lettura dati: {e}")
+        st.error(
+            f"Errore lettura dati: {e}"
+        )
 
-    # =========================
+    # =================================================
     # SALDI
-    # =========================
+    # =================================================
     st.divider()
 
     st.header("💰 Saldi Casse")
 
     try:
 
-        response = supabase.table("movimenti").select("*").execute()
+        response = supabase.table(
+            "movimenti"
+        ).select("*").execute()
 
         df_all = pd.DataFrame(response.data)
 
         for cassa in CASSE:
 
-            df_cassa = df_all[df_all["cassa"] == cassa]
+            df_cassa = df_all[
+                df_all["cassa"] == cassa
+            ]
 
             entrate = df_cassa[
                 df_cassa["tipo"] == "Entrata"
@@ -403,7 +515,9 @@ if is_admin:
 
             saldo = entrate - uscite
 
-            # COLORI
+            # =============================================
+            # COLORI SALDO
+            # =============================================
             if saldo >= 0:
 
                 st.success(
@@ -418,11 +532,20 @@ if is_admin:
 
     except Exception as e:
 
-        st.error(f"Errore saldi: {e}")
+        st.error(
+            f"Errore saldi: {e}"
+        )
 
-# =========================
+# =====================================================
 # AREA GUEST
-# =========================
+# =====================================================
 else:
 
-    st.info("👤 Modalità Guest: puoi solo inserire spese e scontrini")
+    st.info("""
+    👤 Modalità Guest
+
+    Puoi:
+    - inserire spese
+    - caricare scontrini
+    - inviare acquisti alla segreteria
+    """)
