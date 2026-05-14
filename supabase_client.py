@@ -1,5 +1,3 @@
-print("DEBUG SUPABASE CLIENT CARICATO ✅")
-
 from supabase import create_client
 import ssl
 
