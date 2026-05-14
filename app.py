@@ -188,13 +188,9 @@ with st.form("form_movimento", clear_on_submit=True):
     # =================================================
     # METODO CARICAMENTO
     # =================================================
-    tipo_upload = st.radio(
-        "Metodo caricamento scontrino",
-        [
-            "📸 Fotocamera",
-            "📂 Upload file"
-        ],
-        horizontal=True
+    usa_fotocamera = st.toggle(
+        "Usa fotocamera",
+        value=True
     )
 
     uploaded_file = None
@@ -202,7 +198,7 @@ with st.form("form_movimento", clear_on_submit=True):
     # =================================================
     # FOTOCAMERA
     # =================================================
-    if tipo_upload == "📸 Fotocamera":
+    if usa_fotocamera:
 
         uploaded_file = st.camera_input(
             "📸 Scatta foto scontrino"
