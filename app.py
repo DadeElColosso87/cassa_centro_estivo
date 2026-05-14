@@ -44,26 +44,6 @@ div.stButton > button {
     font-weight: bold;
 }
 
-.saldo-card {
-    border-radius: 18px;
-    padding: 25px;
-    background-color: #f8fafc;
-    border: 1px solid #dfe6ee;
-    text-align: center;
-}
-
-.saldo-titolo {
-    font-size: 22px;
-    font-weight: 800;
-    text-transform: uppercase;
-    margin-bottom: 15px;
-}
-
-.saldo-importo {
-    font-size: 42px;
-    font-weight: bold;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -128,6 +108,7 @@ if st.session_state.ruolo is None:
         st.subheader("👩 Segretaria")
 
         username = st.text_input("Utente")
+
         password = st.text_input(
             "Password",
             type="password"
@@ -514,11 +495,7 @@ else:
                     "💰 Saldi Casse"
                 )
 
-                cols = st.columns(
-                    len(CASSE)
-                )
-
-                for i, cassa in enumerate(CASSE):
+                for cassa in CASSE:
 
                     df_cassa = df[
                         df["cassa"] == cassa
@@ -536,23 +513,41 @@ else:
 
                     saldo = entrate - uscite
 
-                    with cols[i]:
+                    # ===============================
+                    # COLORE
+                    # ===============================
+                    colore = "#d1fae5"
 
-                        st.markdown(f"""
-                        <div class="saldo-card">
+                    if saldo < 0:
+                        colore = "#fee2e2"
 
-                        <div class="saldo-titolo">
-                        {cassa}
-                        </div>
+                    st.markdown(f"""
+                    <div style="
+                        background:{colore};
+                        padding:25px;
+                        border-radius:20px;
+                        margin-bottom:18px;
+                        border:1px solid #dfe6ee;
+                    ">
 
-                        <div class="saldo-importo">
-                        {saldo:.2f} €
-                        </div>
+                    <div style="
+                        font-size:28px;
+                        font-weight:800;
+                        text-transform:uppercase;
+                        margin-bottom:10px;
+                    ">
+                    {cassa}
+                    </div>
 
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                        )
+                    <div style="
+                        font-size:42px;
+                        font-weight:bold;
+                    ">
+                    {saldo:.2f} €
+                    </div>
+
+                    </div>
+                    """, unsafe_allow_html=True)
 
                 st.divider()
 
