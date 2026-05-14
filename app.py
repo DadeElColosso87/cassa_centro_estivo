@@ -48,10 +48,24 @@ div.stButton > button {
 st.title("💰 Cassa Centro Estivo")
 
 # =====================================================
+# MESSAGGIO SUCCESSO
+# =====================================================
+if st.session_state.get("successo"):
+
+    st.success(
+        "✅ Spesa inviata correttamente alla segreteria"
+    )
+
+    st.session_state["successo"] = False
+
+# =====================================================
 # SESSIONE
 # =====================================================
 if "ruolo" not in st.session_state:
     st.session_state.ruolo = None
+
+if "upload_key" not in st.session_state:
+    st.session_state.upload_key = 0
 
 # =====================================================
 # LOGIN
@@ -201,7 +215,8 @@ with st.form("form_movimento", clear_on_submit=True):
     with tab1:
 
         foto_camera = st.camera_input(
-            "📸 Scatta foto scontrino"
+            "📸 Scatta foto scontrino",
+            key=f"camera_{st.session_state.upload_key}"
         )
 
         if foto_camera:
@@ -214,7 +229,8 @@ with st.form("form_movimento", clear_on_submit=True):
 
         file_upload = st.file_uploader(
             "📂 Seleziona file",
-            type=["jpg", "jpeg", "png", "pdf"]
+            type=["jpg", "jpeg", "png", "pdf"],
+            key=f"upload_{st.session_state.upload_key}"
         )
 
         if file_upload:
@@ -344,9 +360,8 @@ with st.form("form_movimento", clear_on_submit=True):
 
                 }).execute()
 
-                st.success(
-                    "✅ Spesa inviata correttamente alla segreteria"
-                )
+                st.session_state["successo"] = True
+                st.session_state.upload_key += 1
 
                 st.rerun()
 
