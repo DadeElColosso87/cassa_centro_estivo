@@ -26,9 +26,13 @@ st.markdown("""
     display: none;
 }
 
+.block-container {
+    padding-top: 2rem;
+}
+
 div.stButton > button {
-    height: 60px;
-    font-size: 20px;
+    height: 55px;
+    font-size: 18px;
     font-weight: bold;
     border-radius: 12px;
 }
@@ -37,6 +41,26 @@ div.stButton > button {
     height: 55px;
     font-size: 18px;
     border-radius: 12px;
+}
+
+.card {
+    border: 1px solid #dfe6ee;
+    border-radius: 18px;
+    padding: 20px;
+    background-color: white;
+}
+
+.preview-box {
+    border: 1px solid #dfe6ee;
+    border-radius: 18px;
+    padding: 20px;
+    background-color: #fafcff;
+}
+
+.small-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 10px;
 }
 
 </style>
@@ -81,14 +105,18 @@ if st.session_state.ruolo is None:
     # =================================================
     with col1:
 
-        st.subheader("👤 Guest")
+        st.markdown("""
+        <div class="card">
+        <h3>👤 Guest</h3>
 
-        st.write("""
         Inserisci:
-        - spese
-        - scontrini
-        - acquisti effettuati
-        """)
+        <ul>
+        <li>Spese</li>
+        <li>Scontrini</li>
+        <li>Acquisti effettuati</li>
+        </ul>
+        </div>
+        """, unsafe_allow_html=True)
 
         if st.button("👤 Entra come Guest"):
             st.session_state.ruolo = "guest"
@@ -99,7 +127,11 @@ if st.session_state.ruolo is None:
     # =================================================
     with col2:
 
-        st.subheader("👩 Segretaria")
+        st.markdown("""
+        <div class="card">
+        <h3>👩 Segretaria</h3>
+        </div>
+        """, unsafe_allow_html=True)
 
         username = st.text_input("Utente")
         password = st.text_input("Password", type="password")
@@ -200,7 +232,7 @@ with st.form("form_movimento", clear_on_submit=True):
     data_scontrino = st.date_input("Data scontrino")
 
     # =================================================
-    # CARICAMENTO SCONTRINO
+    # TABS
     # =================================================
     tab1, tab2 = st.tabs([
         "📸 Fotocamera",
@@ -210,7 +242,7 @@ with st.form("form_movimento", clear_on_submit=True):
     uploaded_file = None
 
     # =================================================
-    # TAB FOTOCAMERA
+    # FOTO
     # =================================================
     with tab1:
 
@@ -223,7 +255,7 @@ with st.form("form_movimento", clear_on_submit=True):
             uploaded_file = foto_camera
 
     # =================================================
-    # TAB FILE
+    # FILE
     # =================================================
     with tab2:
 
@@ -247,7 +279,7 @@ with st.form("form_movimento", clear_on_submit=True):
 
             st.image(
                 uploaded_file,
-                width=350
+                width=300
             )
 
         elif uploaded_file.type == "application/pdf":
@@ -281,9 +313,6 @@ with st.form("form_movimento", clear_on_submit=True):
     # =================================================
     if submit:
 
-        # =============================================
-        # CONTROLLI
-        # =============================================
         if (
             tipo == ""
             or cassa == ""
@@ -308,13 +337,10 @@ with st.form("form_movimento", clear_on_submit=True):
 
             try:
 
-                # =====================================
-                # URL FILE
-                # =====================================
                 public_url = ""
 
                 # =====================================
-                # UPLOAD FILE SUPABASE
+                # UPLOAD FILE
                 # =====================================
                 if uploaded_file:
 
@@ -337,7 +363,7 @@ with st.form("form_movimento", clear_on_submit=True):
                         .get_public_url(nome_file)
 
                 # =====================================
-                # SALVATAGGIO DATABASE
+                # DATABASE
                 # =====================================
                 supabase.table("movimenti").insert({
 
@@ -372,7 +398,7 @@ with st.form("form_movimento", clear_on_submit=True):
                 )
 
 # =====================================================
-# AREA ADMIN
+# ADMIN
 # =====================================================
 if is_admin:
 
@@ -388,28 +414,23 @@ if is_admin:
 
         df = pd.DataFrame(response.data)
 
-        # =================================================
-        # NESSUN DATO
-        # =================================================
         if df.empty:
 
-            st.info(
-                "Nessun movimento registrato"
-            )
+            st.info("Nessun movimento registrato")
 
         else:
 
-            # =============================================
-            # ORDINA PER DATA
-            # =============================================
+            # =========================================
+            # ORDINA
+            # =========================================
             df = df.sort_values(
                 by="data",
                 ascending=False
             )
 
-            # =============================================
-            # FILTRO CASSA
-            # =============================================
+            # =========================================
+            # FILTRO
+            # =========================================
             filtro_cassa = st.selectbox(
                 "Filtra per cassa",
                 ["Tutte"] + CASSE
@@ -421,63 +442,123 @@ if is_admin:
                     df["cassa"] == filtro_cassa
                 ]
 
-            # =============================================
-            # LINK SCONTRINO
-            # =============================================
-            if "file_scontrino" in df.columns:
+            # =========================================
+            # TABELLA PULITA
+            # =========================================
+            colonne_tabella = [
+                "data",
+                "tipo",
+                "importo",
+                "categoria",
+                "descrizione",
+                "metodo",
+                "inserito_da",
+                "esercente",
+                "numero_scontrino",
+                "data_scontrino"
+            ]
 
-                df["Scontrino"] = df[
-                    "file_scontrino"
-                ]
-
-                df = df.drop(
-                    columns=["file_scontrino"]
-                )
-
-            # =============================================
-            # CHECKBOX
-            # =============================================
-            df.insert(
-                0,
-                "Seleziona",
-                False
+            st.dataframe(
+                df[colonne_tabella],
+                use_container_width=True,
+                hide_index=True
             )
 
-            # =============================================
-            # TABELLA
-            # =============================================
-            df_edit = st.data_editor(
-                df,
-                use_container_width=True
-            )
+            st.divider()
 
-            # =============================================
-            # ELIMINA
-            # =============================================
-            if st.button(
-                "🗑 Elimina selezionati"
-            ):
+            # =========================================
+            # VISUALIZZA ALLEGATO
+            # =========================================
+            st.markdown("""
+            <div class="preview-box">
+            <div class="small-title">
+            👁 Visualizza allegato
+            </div>
+            """, unsafe_allow_html=True)
 
-                for _, row in df_edit.iterrows():
+            opzioni = []
 
-                    if row["Seleziona"]:
+            for i, row in df.iterrows():
 
-                        supabase.table(
-                            "movimenti"
-                        ).delete().eq(
-                            "id",
-                            row["id"]
-                        ).execute()
-
-                st.success(
-                    "✅ Eliminazione completata"
+                testo = (
+                    f"{row['data']} - "
+                    f"{row['importo']} € - "
+                    f"{row['descrizione']} "
+                    f"({row['inserito_da']})"
                 )
 
-                st.rerun()
+                opzioni.append(testo)
 
-            # =============================================
-            # EXPORT EXCEL
-            # =============================================
+            scelta = st.selectbox(
+                "Seleziona movimento",
+                opzioni
+            )
+
+            # =========================================
+            # MOVIMENTO SELEZIONATO
+            # =========================================
+            indice = opzioni.index(scelta)
+
+            movimento = df.iloc[indice]
+
+            col_preview, col_info = st.columns([1, 1])
+
+            # =========================================
+            # PREVIEW
+            # =========================================
+            with col_preview:
+
+                st.subheader("🧾 Anteprima scontrino")
+
+                url = movimento["file_scontrino"]
+
+                if url:
+
+                    if (
+                        ".jpg" in url
+                        or ".jpeg" in url
+                        or ".png" in url
+                    ):
+
+                        st.image(
+                            url,
+                            width=350
+                        )
+
+                    elif ".pdf" in url:
+
+                        st.link_button(
+                            "📄 Apri PDF",
+                            url
+                        )
+
+                else:
+
+                    st.info("Nessun allegato")
+
+            # =========================================
+            # DETTAGLI
+            # =========================================
+            with col_info:
+
+                st.subheader("📋 Dettagli movimento")
+
+                st.write(f"**Tipo:** {movimento['tipo']}")
+                st.write(f"**Importo:** {movimento['importo']} €")
+                st.write(f"**Categoria:** {movimento['categoria']}")
+                st.write(f"**Descrizione:** {movimento['descrizione']}")
+                st.write(f"**Metodo:** {movimento['metodo']}")
+                st.write(f"**Inserito da:** {movimento['inserito_da']}")
+                st.write(f"**Esercente:** {movimento['esercente']}")
+                st.write(f"**Numero scontrino:** {movimento['numero_scontrino']}")
+                st.write(f"**Data scontrino:** {movimento['data_scontrino']}")
+                st.write(f"**Note:** {movimento['note']}")
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            # =========================================
+            # EXPORT
+            # =========================================
             st.divider()
 
             st.header("📥 Esporta Excel")
@@ -532,9 +613,6 @@ if is_admin:
 
             saldo = entrate - uscite
 
-            # =============================================
-            # COLORI SALDO
-            # =============================================
             if saldo >= 0:
 
                 st.success(
@@ -554,7 +632,7 @@ if is_admin:
         )
 
 # =====================================================
-# AREA GUEST
+# GUEST
 # =====================================================
 else:
 
