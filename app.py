@@ -17,7 +17,7 @@ st.set_page_config(
 )
 
 # =====================================================
-# NASCONDI SIDEBAR
+# STYLE
 # =====================================================
 st.markdown("""
 <style>
@@ -186,34 +186,39 @@ with st.form("form_movimento", clear_on_submit=True):
     data_scontrino = st.date_input("Data scontrino")
 
     # =================================================
-    # METODO CARICAMENTO
+    # CARICAMENTO SCONTRINO
     # =================================================
-    tipo_upload = st.segmented_control(
-        "Metodo caricamento",
-        ["📸 Fotocamera", "📂 Upload file"],
-        default="📸 Fotocamera"
-    )
+    tab1, tab2 = st.tabs([
+        "📸 Fotocamera",
+        "📂 Upload file"
+    ])
 
     uploaded_file = None
 
     # =================================================
-    # FOTOCAMERA
+    # TAB FOTOCAMERA
     # =================================================
-    if tipo_upload == "📸 Fotocamera":
+    with tab1:
 
-        uploaded_file = st.camera_input(
+        foto_camera = st.camera_input(
             "📸 Scatta foto scontrino"
         )
 
-    # =================================================
-    # UPLOAD FILE
-    # =================================================
-    if tipo_upload == "📂 Upload file":
+        if foto_camera:
+            uploaded_file = foto_camera
 
-        uploaded_file = st.file_uploader(
+    # =================================================
+    # TAB FILE
+    # =================================================
+    with tab2:
+
+        file_upload = st.file_uploader(
             "📂 Seleziona file",
             type=["jpg", "jpeg", "png", "pdf"]
         )
+
+        if file_upload:
+            uploaded_file = file_upload
 
     # =================================================
     # ANTEPRIMA
@@ -231,7 +236,7 @@ with st.form("form_movimento", clear_on_submit=True):
 
         elif uploaded_file.type == "application/pdf":
 
-            st.info("📄 PDF caricato correttamente")
+            st.success("📄 PDF caricato correttamente")
 
     # =================================================
     # CHI INSERISCE
