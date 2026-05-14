@@ -3,123 +3,244 @@ import pandas as pd
 import io
 import uuid
 
+from datetime import date
+
 from supabase_client import supabase
 from config import CASSE, TIPI, METODI, CATEGORIE
 
-st.set_page_config(page_title="Cassa Centro Estivo", layout="wide")
+# =========================
+# PAGINA
+# =========================
+st.set_page_config(
+    page_title="Cassa Centro Estivo",
+    layout="wide"
+)
 
+# =========================
+# NASCONDI SIDEBAR
+# =========================
+st.markdown("""
+<style>
+[data-testid="stSidebar"] {
+    display: none;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# =========================
+# BOTTONI GRANDI MOBILE
+# =========================
+st.markdown("""
+<style>
+div.stButton > button {
+    height: 60px;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 12px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# =========================
+# TITOLO
+# =========================
 st.title("💰 Cassa Centro Estivo")
 
 # =========================
-# SCELTA RUOLO
+# SESSIONE RUOLO
 # =========================
 if "ruolo" not in st.session_state:
     st.session_state.ruolo = None
 
+# =========================
+# LOGIN
+# =========================
 if st.session_state.ruolo is None:
 
-    st.header("Seleziona accesso")
+    st.header("🔐 Accesso")
 
     col1, col2 = st.columns(2)
 
+    # =========================
+    # GUEST
+    # =========================
     with col1:
-        if st.button("👤 Guest"):
+
+        st.subheader("👤 Guest")
+
+        st.write("Inserimento spese e scontrini")
+
+        if st.button("Entra come Guest"):
             st.session_state.ruolo = "guest"
             st.rerun()
 
+    # =========================
+    # ADMIN
+    # =========================
     with col2:
-        st.subheader("🔐 Admin")
+
+        st.subheader("👩 Segretaria")
 
         username = st.text_input("Utente")
         password = st.text_input("Password", type="password")
 
-        if st.button("Login"):
+        if st.button("Login Admin"):
+
             if username == "admin" and password == "admin2026":
                 st.session_state.ruolo = "admin"
                 st.rerun()
+
             else:
-                st.error("Credenziali errate")
+                st.error("❌ Credenziali errate")
 
     st.stop()
 
+# =========================
+# CONTROLLO RUOLO
+# =========================
 is_admin = st.session_state.ruolo == "admin"
 
-# logout
+# =========================
+# LOGOUT
+# =========================
 if st.button("🚪 Logout"):
     st.session_state.ruolo = None
     st.rerun()
 
 # =========================
-# INSERIMENTO
+# INSERIMENTO MOVIMENTO
 # =========================
-st.header("➕ Inserisci Movimento")
+st.header("➕ Inserisci Spesa")
 
-with st.form("form", clear_on_submit=True):
+with st.form("form_movimento", clear_on_submit=True):
 
     col1, col2, col3 = st.columns(3)
 
+    # =========================
+    # COLONNA 1
+    # =========================
     with col1:
-        data = st.date_input("Data")
-        tipo = st.selectbox("Tipo", [""] + TIPI)
-        cassa = st.selectbox("Cassa", [""] + CASSE)
 
+        data = date.today()
+
+        st.write(f"📅 Data: {data}")
+
+        tipo = st.selectbox(
+            "Tipo",
+            [""] + TIPI
+        )
+
+        cassa = st.selectbox(
+            "Cassa",
+            [""] + CASSE
+        )
+
+    # =========================
+    # COLONNA 2
+    # =========================
     with col2:
-        descrizione = st.text_input("Descrizione")
-        metodo = st.selectbox("Metodo", [""] + METODI)
-        importo = st.number_input("Importo", min_value=0.0)
 
+        descrizione = st.text_input("Descrizione")
+
+        metodo = st.selectbox(
+            "Metodo",
+            [""] + METODI
+        )
+
+        importo = st.number_input(
+            "Importo",
+            min_value=0.0,
+            step=0.50
+        )
+
+    # =========================
+    # COLONNA 3
+    # =========================
     with col3:
-        categoria = st.selectbox("Categoria", [""] + CATEGORIE)
+
+        categoria = st.selectbox(
+            "Categoria",
+            [""] + CATEGORIE
+        )
+
         note = st.text_input("Note")
 
+    # =========================
+    # SCONTRINO
+    # =========================
     st.subheader("🧾 Scontrino")
 
-    numero_scontrino = st.text_input("Numero")
+    numero_scontrino = st.text_input("Numero scontrino")
+
     esercente = st.text_input("Esercente")
+
     data_scontrino = st.date_input("Data scontrino")
 
-    uploaded_file = st.file_uploader("📸 Carica scontrino", type=["jpg", "png", "jpeg"])
+    # CAMERA DIRETTA
+    uploaded_file = st.camera_input("📸 Scatta foto scontrino")
 
+    # =========================
+    # INSERITO DA
+    # =========================
     st.subheader("👤 Chi inserisce")
 
     if is_admin:
         inserito_da = "Segretaria"
+
     else:
         inserito_da = st.text_input("Nome e Cognome")
 
-    submit = st.form_submit_button("✅ Inserisci")
+    # =========================
+    # SUBMIT
+    # =========================
+    submit = st.form_submit_button("✅ Invia Spesa")
 
+    # =========================
+    # INVIO
+    # =========================
     if submit:
 
         if tipo == "" or cassa == "" or metodo == "" or categoria == "":
-            st.error("Compila tutti i campi obbligatori")
+
+            st.error("❌ Compila tutti i campi obbligatori")
 
         elif not is_admin and inserito_da.strip() == "":
-            st.error("Inserisci nome e cognome")
+
+            st.error("❌ Inserisci nome e cognome")
 
         else:
+
             try:
+
                 # =========================
-                # UPLOAD SCONTRINO SU SUPABASE
+                # URL SCONTRINO
                 # =========================
                 public_url = ""
 
+                # =========================
+                # UPLOAD FOTO
+                # =========================
                 if uploaded_file:
+
                     estensione = uploaded_file.name.split(".")[-1]
-                    nome_file = f"{uuid.uuid4()}.{estensione}
+
+                    nome_file = f"{uuid.uuid4()}.{estensione}"
 
                     supabase.storage.from_("scontrini").upload(
                         nome_file,
                         uploaded_file.getvalue(),
-                        {"content-type": uploaded_file.type}
+                        {
+                            "content-type": uploaded_file.type
+                        }
                     )
 
                     public_url = supabase.storage.from_("scontrini").get_public_url(nome_file)
 
                 # =========================
-                # SALVA SU DATABASE
+                # SALVATAGGIO DATABASE
                 # =========================
                 supabase.table("movimenti").insert({
+
                     "data": str(data),
                     "tipo": tipo,
                     "cassa": cassa,
@@ -127,60 +248,123 @@ with st.form("form", clear_on_submit=True):
                     "metodo": metodo,
                     "importo": float(importo),
                     "categoria": categoria,
+
                     "numero_scontrino": numero_scontrino,
                     "esercente": esercente,
                     "data_scontrino": str(data_scontrino),
+
                     "file_scontrino": public_url,
+
                     "inserito_da": inserito_da,
                     "note": note
+
                 }).execute()
 
-                st.success("✅ Movimento registrato")
+                st.success("✅ Spesa inviata correttamente alla segreteria")
+
                 st.rerun()
 
             except Exception as e:
+
                 st.error(f"Errore inserimento: {e}")
 
 # =========================
-# ADMIN
+# AREA ADMIN
 # =========================
 if is_admin:
+
+    st.divider()
 
     st.header("📊 Movimenti")
 
     try:
+
         response = supabase.table("movimenti").select("*").execute()
+
         df = pd.DataFrame(response.data)
 
+        # =========================
+        # NESSUN DATO
+        # =========================
         if df.empty:
-            st.info("Nessun movimento")
+
+            st.info("Nessun movimento registrato")
+
         else:
-            # ✅ colonna cliccabile scontrino
+
+            # =========================
+            # ORDINA ULTIMI PRIMA
+            # =========================
+            df = df.sort_values(
+                by="data",
+                ascending=False
+            )
+
+            # =========================
+            # FILTRO CASSA
+            # =========================
+            filtro_cassa = st.selectbox(
+                "Filtra per cassa",
+                ["Tutte"] + CASSE
+            )
+
+            if filtro_cassa != "Tutte":
+
+                df = df[df["cassa"] == filtro_cassa]
+
+            # =========================
+            # LINK SCONTRINO
+            # =========================
             if "file_scontrino" in df.columns:
-                df["Scontrino"] = df["file_scontrino"].apply(
-                    lambda x: f"{x}" if x else ""
-                )
+
+                df["Scontrino"] = df["file_scontrino"]
+
                 df = df.drop(columns=["file_scontrino"])
 
-            # ✅ checkbox selezione
+            # =========================
+            # CHECKBOX SELEZIONE
+            # =========================
             df.insert(0, "Seleziona", False)
 
-            df_edit = st.data_editor(df, use_container_width=True)
+            # =========================
+            # TABELLA
+            # =========================
+            df_edit = st.data_editor(
+                df,
+                use_container_width=True
+            )
 
-            # ✅ elimina
+            # =========================
+            # ELIMINA
+            # =========================
             if st.button("🗑 Elimina selezionati"):
+
                 for _, row in df_edit.iterrows():
+
                     if row["Seleziona"]:
-                        supabase.table("movimenti").delete().eq("id", row["id"]).execute()
+
+                        supabase.table("movimenti") \
+                            .delete() \
+                            .eq("id", row["id"]) \
+                            .execute()
 
                 st.success("✅ Eliminazione completata")
+
                 st.rerun()
 
-            # ✅ download Excel
-            st.header("📥 Esporta")
+            # =========================
+            # EXPORT EXCEL
+            # =========================
+            st.divider()
+
+            st.header("📥 Esporta Excel")
 
             output = io.BytesIO()
-            df.to_excel(output, index=False)
+
+            df.to_excel(
+                output,
+                index=False
+            )
 
             st.download_button(
                 label="📊 Scarica Excel",
@@ -189,29 +373,56 @@ if is_admin:
             )
 
     except Exception as e:
+
         st.error(f"Errore lettura dati: {e}")
 
     # =========================
     # SALDI
     # =========================
-    st.header("💰 Saldi")
+    st.divider()
+
+    st.header("💰 Saldi Casse")
 
     try:
+
         response = supabase.table("movimenti").select("*").execute()
+
         df_all = pd.DataFrame(response.data)
 
         for cassa in CASSE:
+
             df_cassa = df_all[df_all["cassa"] == cassa]
 
-            entrate = df_cassa[df_cassa["tipo"] == "Entrata"]["importo"].sum()
-            uscite = df_cassa[df_cassa["tipo"] == "Uscita"]["importo"].sum()
+            entrate = df_cassa[
+                df_cassa["tipo"] == "Entrata"
+            ]["importo"].sum()
+
+            uscite = df_cassa[
+                df_cassa["tipo"] == "Uscita"
+            ]["importo"].sum()
 
             saldo = entrate - uscite
 
-            st.write(f"**{cassa}: {saldo:.2f} €**")
+            # COLORI
+            if saldo >= 0:
+
+                st.success(
+                    f"{cassa}: {saldo:.2f} €"
+                )
+
+            else:
+
+                st.error(
+                    f"{cassa}: {saldo:.2f} €"
+                )
 
     except Exception as e:
+
         st.error(f"Errore saldi: {e}")
 
+# =========================
+# AREA GUEST
+# =========================
 else:
-    st.info("👤 Modalità Guest: solo inserimento")
+
+    st.info("👤 Modalità Guest: puoi solo inserire spese e scontrini")
