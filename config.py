@@ -4,7 +4,7 @@ SEPARATORE = ";"
 
 CASSE = ["Elementari", "Medie", "Materna", "Campo S+L"]
 TIPI = ["Entrata", "Uscita"]
-METODI = ["Contanti", "Bancomat", "Bonifico"]
+METODI = ["Contanti", "Bancomat"]
 
 CATEGORIE = [
     "Fondo iniziale",
