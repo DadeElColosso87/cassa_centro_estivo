@@ -188,9 +188,10 @@ with st.form("form_movimento", clear_on_submit=True):
     # =================================================
     # METODO CARICAMENTO
     # =================================================
-    usa_fotocamera = st.toggle(
-        "Usa fotocamera",
-        value=True
+    tipo_upload = st.segmented_control(
+        "Metodo caricamento",
+        ["📸 Fotocamera", "📂 Upload file"],
+        default="📸 Fotocamera"
     )
 
     uploaded_file = None
@@ -198,7 +199,7 @@ with st.form("form_movimento", clear_on_submit=True):
     # =================================================
     # FOTOCAMERA
     # =================================================
-    if usa_fotocamera:
+    if tipo_upload == "📸 Fotocamera":
 
         uploaded_file = st.camera_input(
             "📸 Scatta foto scontrino"
@@ -207,10 +208,10 @@ with st.form("form_movimento", clear_on_submit=True):
     # =================================================
     # UPLOAD FILE
     # =================================================
-    else:
+    if tipo_upload == "📂 Upload file":
 
         uploaded_file = st.file_uploader(
-            "📂 Carica scontrino",
+            "📂 Seleziona file",
             type=["jpg", "jpeg", "png", "pdf"]
         )
 
