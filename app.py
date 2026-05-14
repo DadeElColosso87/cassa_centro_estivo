@@ -3,6 +3,7 @@ import pandas as pd
 import io
 
 from supabase_client import supabase
+st.write("DEBUG USO SUPABASE CLIENT ✅")
 from config import CASSE, TIPI, METODI, CATEGORIE
 
 st.set_page_config(page_title="Cassa Centro Estivo", layout="wide")
