@@ -112,7 +112,7 @@ with st.form("form", clear_on_submit=True):
                         {"content-type": uploaded_file.type}
                     )
 
-                    public_url = supabase.storage.from_("scontrini").get_public_url(nome_file)
+                    public_url = supabase.storage.from_("scontrini").get_public_url(nome_file)["publicUrl"]
 
                 # =========================
                 # SALVA SU DATABASE
