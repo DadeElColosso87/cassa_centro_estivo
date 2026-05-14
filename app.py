@@ -1,3 +1,8 @@
+# =====================================================
+# APP.PY - CASSA CENTRO ESTIVO
+# VERSIONE DEFINITIVA
+# =====================================================
+
 import streamlit as st
 import pandas as pd
 import io
@@ -294,6 +299,9 @@ if not is_admin:
                 "Note"
             )
 
+        # =============================================
+        # SCONTRINO
+        # =============================================
         st.subheader("🧾 Scontrino")
 
         numero_scontrino = st.text_input(
@@ -309,7 +317,7 @@ if not is_admin:
         )
 
         # =============================================
-        # TABS UPLOAD
+        # UPLOAD
         # =============================================
         tab1, tab2 = st.tabs([
             "📸 Fotocamera",
@@ -318,9 +326,7 @@ if not is_admin:
 
         uploaded_file = None
 
-        # =============================================
         # FOTO
-        # =============================================
         with tab1:
 
             foto_camera = st.camera_input(
@@ -332,9 +338,7 @@ if not is_admin:
             if foto_camera:
                 uploaded_file = foto_camera
 
-        # =============================================
         # FILE
-        # =============================================
         with tab2:
 
             file_upload = st.file_uploader(
@@ -377,12 +381,18 @@ if not is_admin:
                     "📄 PDF caricato"
                 )
 
+        # =============================================
+        # CHI INSERISCE
+        # =============================================
         st.subheader("👤 Chi inserisce")
 
         inserito_da = st.text_input(
             "Nome e Cognome"
         )
 
+        # =============================================
+        # SUBMIT
+        # =============================================
         submit = st.form_submit_button(
             "✅ Invia Spesa"
         )
@@ -495,6 +505,8 @@ else:
                     "💰 Saldi Casse"
                 )
 
+                saldi = {}
+
                 for cassa in CASSE:
 
                     df_cassa = df[
@@ -511,43 +523,39 @@ else:
                         == "Uscita"
                     ]["importo"].sum()
 
-                    saldo = entrate - uscite
+                    saldi[cassa] = (
+                        entrate - uscite
+                    )
 
-                    # ===============================
-                    # COLORE
-                    # ===============================
-                    colore = "#d1fae5"
+                col1, col2, col3, col4 = st.columns(4)
 
-                    if saldo < 0:
-                        colore = "#fee2e2"
+                with col1:
 
-                    st.markdown(f"""
-                    <div style="
-                        background:{colore};
-                        padding:25px;
-                        border-radius:20px;
-                        margin-bottom:18px;
-                        border:1px solid #dfe6ee;
-                    ">
+                    st.metric(
+                        "ELEMENTARI",
+                        f"{saldi['Elementari']:.2f} €"
+                    )
 
-                    <div style="
-                        font-size:28px;
-                        font-weight:800;
-                        text-transform:uppercase;
-                        margin-bottom:10px;
-                    ">
-                    {cassa}
-                    </div>
+                with col2:
 
-                    <div style="
-                        font-size:42px;
-                        font-weight:bold;
-                    ">
-                    {saldo:.2f} €
-                    </div>
+                    st.metric(
+                        "MEDIE",
+                        f"{saldi['Medie']:.2f} €"
+                    )
 
-                    </div>
-                    """, unsafe_allow_html=True)
+                with col3:
+
+                    st.metric(
+                        "MATERNA",
+                        f"{saldi['Materna']:.2f} €"
+                    )
+
+                with col4:
+
+                    st.metric(
+                        "CAMPO S+L",
+                        f"{saldi['Campo S+L']:.2f} €"
+                    )
 
                 st.divider()
 
@@ -959,6 +967,9 @@ else:
                     key="admin_note"
                 )
 
+            # =========================================
+            # SCONTRINO
+            # =========================================
             st.subheader("🧾 Scontrino")
 
             numero_scontrino = st.text_input(
@@ -976,6 +987,9 @@ else:
                 key="admin_data_scontrino"
             )
 
+            # =========================================
+            # UPLOAD
+            # =========================================
             tab1, tab2 = st.tabs([
                 "📸 Fotocamera",
                 "📂 Upload file"
@@ -983,9 +997,7 @@ else:
 
             uploaded_file = None
 
-            # =========================================
             # FOTO
-            # =========================================
             with tab1:
 
                 foto_camera = st.camera_input(
@@ -997,9 +1009,7 @@ else:
                 if foto_camera:
                     uploaded_file = foto_camera
 
-            # =========================================
             # FILE
-            # =========================================
             with tab2:
 
                 file_upload = st.file_uploader(
@@ -1044,6 +1054,9 @@ else:
                         "📄 PDF caricato"
                     )
 
+            # =========================================
+            # SUBMIT
+            # =========================================
             submit = st.form_submit_button(
                 "✅ Inserisci Movimento"
             )
