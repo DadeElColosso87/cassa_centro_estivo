@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
+import uuid
 
 from supabase_client import supabase
 from config import CASSE, TIPI, METODI, CATEGORIE
@@ -104,7 +105,8 @@ with st.form("form", clear_on_submit=True):
                 public_url = ""
 
                 if uploaded_file:
-                    nome_file = f"{data}_{importo}_{uploaded_file.name}"
+                    estensione = uploaded_file.name.split(".")[-1]
+                    nome_file = f"{uuid.uuid4()}.{estensione}
 
                     supabase.storage.from_("scontrini").upload(
                         nome_file,
